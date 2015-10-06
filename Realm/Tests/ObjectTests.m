@@ -1597,6 +1597,28 @@ RLM_ARRAY_TYPE(PrimaryEmployeeObject);
     [realm commitWriteTransaction];
 }
 
+- (void)testAddOrUpdatePartialUpdate {
+    RLMRealm *realm = [RLMRealm defaultRealm];
+    [realm beginWriteTransaction];
+
+    [PrimaryNestedObject createOrUpdateInDefaultRealmWithValue:@{@"primaryCol": @0,
+                                                                 @"primaryStringObject": @[@"string", @2],
+                                                                 @"primaryStringObjectWrapper": @[@[@"string", @2]],
+                                                                 @"stringObject": @[@"string2"]}];
+    PrimaryNestedObject *updateObject = [[PrimaryNestedObject alloc] initWithValue:@{@"primaryCol": @0,
+                                                                                     @"stringCol": @"updated",
+                                                                                     @"stringObject": NSNull.null,
+                                                                                     @"primaryIntArray": NSNull.null}];
+    [realm addOrUpdateObject:updateObject];
+
+    PrimaryNestedObject *obj = [[PrimaryNestedObject allObjects] firstObject];
+    XCTAssertEqual(2, obj.primaryStringObject.intCol, @"primaryStringObject should not have changed");
+    XCTAssertEqualObjects(obj.stringCol, @"updated", @"stringCol should have been updated");
+    XCTAssertEqual(0U, obj.primaryIntArray.count, @"intArray should not have been emptied");
+    XCTAssertNil(obj.stringObject, @"stringObject should be nil");
+
+    [realm commitWriteTransaction];
+}
 
 - (void)testObjectInSet {
     [[RLMRealm defaultRealm] beginWriteTransaction];
